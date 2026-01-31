@@ -114,5 +114,64 @@ These insights directly inform the data preparation strategy and guide the selec
 \newpage
 
 
+\section{Data Preparation}
+
+This section describes the steps undertaken to prepare the dataset for machine learning modeling. The objective of data preparation is to ensure data quality, remove non-informative attributes, and create reproducible training and testing datasets suitable for experimentation and evaluation.
+
+\subsection{Data Loading}
+
+The dataset was loaded directly from the Hugging Face Dataset Hub to ensure consistency with the registered data source. Loading the data from a centralized repository guarantees reproducibility and ensures that all experiments are conducted on a version-controlled dataset rather than local copies.
+
+\subsection{Data Cleaning and Feature Selection}
+
+An initial data cleaning step was performed to remove columns that are not relevant for predictive modeling. Since the objective is to predict engine failure based on sensor behavior, only numerical sensor variables and the target variable were retained.
+
+The dataset did not contain missing values across the selected features, eliminating the need for imputation. No feature scaling or normalization was applied at this stage, as the subsequent modeling phase focuses on tree-based algorithms that are inherently robust to differences in feature scale and distribution.
+
+\subsection{Train--Test Split}
+
+The cleaned dataset was split into training and testing subsets to enable unbiased model evaluation. A stratified split strategy was employed to preserve the original class distribution of the target variable in both subsets, which is particularly important given the class imbalance observed during exploratory data analysis.
+
+The training and testing datasets were saved locally to maintain a clear separation between raw, processed, and modeling-ready data.
+
+\subsection{Dataset Versioning and Upload}
+
+To maintain reproducibility and support experiment tracking, the processed training and testing datasets were uploaded back to the Hugging Face Dataset Hub. This ensures that all modeling experiments reference a fixed and verifiable version of the prepared data.
+
+By registering both raw and processed datasets on the Hugging Face platform, the data preparation workflow remains transparent, auditable, and reproducible.
+
+
+\newpage
+
+\section{Model Building with Experimentation Tracking}
+
+This section describes the development, tuning, evaluation, and registration of machine learning models for predicting engine failure. The objective is to establish a transparent and reproducible experimentation workflow that enables systematic comparison of model performance.
+
+\subsection{Data Loading}
+
+The training and testing datasets were loaded directly from the Hugging Face Dataset Hub to ensure consistency with the versioned outputs of the data preparation stage. This approach guarantees that all modeling experiments are conducted on fixed and auditable datasets.
+
+\subsection{Model Selection and Baseline}
+
+Based on insights from exploratory data analysis, tree-based machine learning algorithms were selected due to their ability to model non-linear relationships, robustness to outliers, and tolerance to correlated features. A Decision Tree classifier was used as a baseline model to establish a performance reference point.
+
+\subsection{Hyperparameter Tuning and Experiment Tracking}
+
+To improve predictive performance, ensemble-based models were trained with systematic hyperparameter tuning. Key model parameters were varied and logged to enable structured experimentation and comparison across model configurations.
+
+All hyperparameters and evaluation metrics were explicitly recorded to ensure transparency and reproducibility of the experimentation process.
+
+\subsection{Model Evaluation}
+
+Model performance was evaluated on the held-out test dataset using metrics appropriate for imbalanced classification problems. Precision, recall, F1-score, and ROC-AUC were used to assess the trade-off between failure detection and false maintenance alerts.
+
+The confusion matrix was analyzed to understand error distribution and to quantify the cost of missed failure events.
+
+\subsection{Best Model Selection and Registration}
+
+The best-performing model was selected based on recall and F1-score, reflecting the business priority of minimizing undetected engine failures. This model was subsequently registered on the Hugging Face Model Hub, along with its configuration and performance metrics.
+
+Registering the model on the Hugging Face platform ensures reproducibility, enables version control, and supports future deployment and evaluation workflows.
+
 
 \end{document}
