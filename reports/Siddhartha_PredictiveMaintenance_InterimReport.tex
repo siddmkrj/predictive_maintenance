@@ -1,0 +1,118 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{float}
+
+\title{Predictive Maintenance Using Engine Sensor Data\\
+\large Interim Project Report}
+\author{Siddhartha Mukherjee}
+\date{\today}
+
+\begin{document}
+
+
+\pagenumbering{gobble}
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+Unplanned equipment failures can lead to significant operational downtime, increased maintenance costs, and loss of productivity in industrial environments. Reactive maintenance strategies address failures only after they occur, while scheduled preventive maintenance may result in unnecessary servicing and higher operational costs.
+
+Predictive maintenance addresses these challenges by leveraging historical sensor data and machine learning techniques to identify early warning signals of potential failures. By anticipating failures in advance, organizations can optimize maintenance schedules, reduce unplanned downtime, and improve overall asset reliability.
+
+This project focuses on developing a predictive maintenance solution using multivariate engine sensor data. The interim phase of the project emphasizes establishing a reproducible data pipeline, conducting exploratory data analysis, preparing the data for modeling, and building initial machine learning models with systematic experimentation tracking.
+
+\section{Data Registration}
+
+A structured project directory was created to ensure a clear separation between raw data, processed datasets, and experimental artifacts. A dedicated \texttt{data/} subdirectory was used to store all datasets associated with this project, enabling organized data management and traceability.
+
+To ensure reproducibility, auditability, and version control, the raw dataset was registered on the Hugging Face Dataset Hub. The dataset was uploaded in its original form prior to any preprocessing or transformation, ensuring that all downstream analysis can be traced back to a consistent and immutable data source.
+
+All subsequent data loading operations in the analysis and modeling pipeline retrieve the dataset directly from the Hugging Face repository rather than from local file paths. This approach guarantees consistency across experiments and enables independent verification of results.
+
+\subsection*{Dataset Details}
+
+\begin{itemize}
+    \item \textbf{Dataset Name:} predictive-maintenance-engine-data
+    \item \textbf{Storage Platform:} Hugging Face Dataset Hub
+	\item \textbf{Dataset URL:} \url{https://huggingface.co/datasets/mukherjee78/predictive-maintenance-engine-data}
+    \item \textbf{Data Type:} Multivariate engine sensor data
+    \item \textbf{Intended Use:} Predictive maintenance and engine failure prediction
+\end{itemize}
+
+\newpage
+
+
+\section{Exploratory Data Analysis}
+
+This section presents an exploratory analysis of the engine sensor dataset to understand its structure, characteristics, and underlying patterns. The objective of this analysis is to gain insights into data quality, feature behavior, and relationships between variables, which will inform subsequent data preparation and modeling decisions.
+
+\subsection{Data Collection and Background}
+
+The dataset consists of multivariate sensor readings collected from industrial engines operating under varying conditions. Each engine is monitored over multiple operational cycles, with sensor measurements capturing different aspects of engine health and performance. The primary objective of the dataset is to enable predictive maintenance by identifying patterns that precede engine failure events.
+
+Such sensor-driven monitoring systems are commonly used in industrial settings to reduce unplanned downtime and optimize maintenance schedules. By analyzing historical sensor behavior, early warning indicators of potential failures can be identified, allowing proactive intervention.
+
+\subsection{Data Overview}
+
+An initial structural assessment of the dataset was conducted to understand its scale, composition, and data quality. The dataset consists of multiple numerical variables representing engine operational parameters and sensor measurements recorded over time.
+
+The dataset contains a single target variable indicating engine failure status, which is modeled as a binary classification problem. All remaining variables represent continuous sensor readings related to temperature, pressure, rotational speed, and fuel characteristics.
+
+An inspection of the dataset revealed that the majority of features are numerical in nature, making the dataset well-suited for machine learning algorithms that operate on continuous inputs. A check for missing values confirmed that the dataset does not contain significant missing data, reducing the need for extensive imputation strategies.
+
+Descriptive statistics were computed for all numerical features to examine their central tendency and variability. Several sensor variables exhibit wide value ranges, indicating differences in operational regimes and engine conditions. These observations motivate the use of robust models capable of handling heterogeneous feature scales.
+
+\subsection{Univariate Analysis}
+
+Univariate analysis was performed to examine the distribution and variability of individual features. This analysis helps identify skewed distributions, potential outliers, and irregular sensor behavior.
+
+The distribution of the target variable was analyzed to assess class balance. Additionally, representative sensor variables were visualized to understand their value ranges and overall behavior across engine cycles.
+
+\subsection{Bivariate Analysis}
+
+Bivariate analysis was performed to examine the relationship between individual sensor variables and the engine failure target. Sensor readings were compared across failure and non-failure instances to identify features that exhibit distinguishable behavior prior to failure events.
+
+Boxplots were used to visualize the distribution of selected sensor variables across the two target classes. Several sensors show noticeable shifts in median values and increased variability in failure cases, suggesting that these variables may contain predictive signals related to engine degradation.
+
+In addition to visual analysis, summary statistics grouped by failure status were examined to quantify differences in sensor behavior between the two classes. These comparisons highlight sensor variables that demonstrate systematic changes as engines approach failure.
+
+The results of this analysis provide early intuition regarding feature relevance and support the selection of models that can capture non-linear relationships between sensor readings and failure outcomes.
+
+\subsection{Multivariate Analysis}
+
+Multivariate analysis was conducted to explore relationships among multiple sensor variables simultaneously and to identify potential interdependencies. A correlation analysis was performed across sensor features to assess the degree of linear association between variables.
+
+The correlation matrix reveals the presence of several strongly correlated sensor pairs, indicating redundancy in the information captured by certain measurements. Such multicollinearity can impact model interpretability and may influence feature selection decisions.
+
+Understanding these inter-feature relationships is important for guiding downstream modeling choices. In particular, the presence of correlated inputs supports the use of tree-based ensemble models, which are generally robust to multicollinearity and can effectively leverage redundant signals without requiring explicit feature elimination.
+
+This analysis also provides a foundation for potential dimensionality reduction or feature pruning in later stages of the project, if required.
+
+\subsection{EDA Insights and Observations}
+
+Based on the exploratory data analysis, the following key insights were identified:
+
+\begin{itemize}
+	\item The target variable is imbalanced, with failure events occurring much less frequently than normal operating conditions. This has important implications for model evaluation, necessitating the use of metrics such as recall, precision, and F1-score rather than accuracy alone.
+	\item Several sensor variables exhibit clear distributional differences between failure and non-failure cases, indicating their potential usefulness as predictive features.
+	\item Strong correlations exist among certain sensor readings, suggesting redundancy in the dataset and highlighting the importance of models that can handle correlated inputs effectively.
+	\item The predominance of numerical features and the presence of non-linear relationships make tree-based ensemble models a suitable choice for this problem.
+\end{itemize}
+
+These insights directly inform the data preparation strategy and guide the selection of appropriate modeling techniques in the subsequent stages of the project.
+
+\newpage
+
+
+
+\end{document}
