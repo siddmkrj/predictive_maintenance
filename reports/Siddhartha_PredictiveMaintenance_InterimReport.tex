@@ -115,10 +115,17 @@ In addition to visual analysis, summary statistics grouped by failure status wer
 The results of this analysis provide early intuition regarding feature relevance and support the selection of models that can capture non-linear relationships between sensor readings and failure outcomes.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/bivariate_sensor_vs_target.png}
-\caption{Sensor value comparison across normal and failure conditions}
-\label{fig:bivariate}
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/univariate_sensor_distributions.png}
+	\caption{Univariate distributions of key engine sensor variables}
+	\label{fig:univariate_dist}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/univariate_sensor_outliers.png}
+	\caption{Outlier patterns observed across engine sensor variables}
+	\label{fig:univariate_outliers}
 \end{figure}
 
 \subsection{Multivariate Analysis}
