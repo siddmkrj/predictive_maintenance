@@ -1,0 +1,379 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{float}
+
+\title{Predictive Maintenance Using Engine Sensor Data\\
+\large Final Project Report}
+\author{Siddhartha Mukherjee}
+\date{\today}
+
+\begin{document}
+
+
+\pagenumbering{gobble}
+\maketitle
+\thispagestyle{empty}
+
+\section*{Executive Summary}
+
+This report presents the end-to-end development of a predictive maintenance solution using engine sensor data. The objective is to anticipate engine failure events by leveraging machine learning models trained on historical sensor measurements, and to deploy the model so that stakeholders can use it for operational decisions.
+
+A master project folder with a dedicated \texttt{data/} subfolder was created, and the dataset was registered on the Hugging Face Dataset Hub for reproducibility. Exploratory data analysis revealed class imbalance and meaningful sensor patterns prior to failure, which informed data preparation and model choice. The dataset was loaded from Hugging Face, cleaned, split into training and testing sets, saved locally, and the processed splits were uploaded back to the Hub. Model building compared five classifiers: Decision Tree (baseline), Random Forest, Logistic Regression, Gradient Boosting, and XGBoost, each with appropriate tuning where applicable. All models were evaluated on the same test set; the best model by recall (Gradient Boosting in the reported run) was selected and registered on the Hugging Face Model Hub.
+
+The trained model was deployed as a Streamlit application on a Hugging Face Space, with a Dockerfile and dependencies file, and a hosting script to push deployment files to the Space. An automated GitHub Actions workflow runs data preparation, model training, and deployment on every push to the main branch. This report includes output evaluation (repository and workflow screenshots, live app link and screenshot) and actionable insights and recommendations.
+
+\newpage
+
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+Unplanned engine failures lead to operational downtime, increased maintenance costs, and reduced asset availability. Traditional reactive or schedule-based maintenance strategies are either costly or ineffective at preventing unexpected breakdowns.
+
+Predictive maintenance leverages historical sensor data and machine learning models to anticipate failures before they occur. By identifying early warning patterns in engine operating conditions, maintenance activities can be scheduled proactively, reducing both downtime and cost.
+
+This final report covers the complete lifecycle: data registration, exploratory data analysis, data preparation, model building with experimentation tracking, model deployment, automated GitHub Actions workflow, output evaluation, and actionable insights and recommendations.
+
+\section{Data Registration}
+
+A \textbf{master folder} (project or repository root) was created, with a \textbf{data} subfolder to store all datasets. This structure ensures a clear separation between raw data, processed datasets, and experimental artifacts, and supports organized data management and traceability.
+
+To ensure reproducibility, auditability, and version control, the raw dataset was registered on the Hugging Face Dataset Hub. The dataset was uploaded in its original form prior to any preprocessing or transformation, ensuring that all downstream analysis can be traced back to a consistent and immutable data source.
+
+All subsequent data loading operations in the analysis and modeling pipeline retrieve the dataset directly from the Hugging Face repository rather than from local file paths. This approach guarantees consistency across experiments and enables independent verification of results.
+
+\subsection*{Dataset Details}
+
+\begin{itemize}
+    \item \textbf{Dataset Name:} predictive-maintenance-engine-data
+    \item \textbf{Storage Platform:} Hugging Face Dataset Hub
+	\item \textbf{Dataset URL:} \url{https://huggingface.co/datasets/mukherjee78/predictive-maintenance-engine-data}
+    \item \textbf{Data Type:} Multivariate engine sensor data
+    \item \textbf{Intended Use:} Predictive maintenance and engine failure prediction
+\end{itemize}
+
+\newpage
+
+
+\section{Exploratory Data Analysis}
+
+This section presents an exploratory analysis of the engine sensor dataset to understand its structure, characteristics, and underlying patterns. The objective of this analysis is to gain insights into data quality, feature behavior, and relationships between variables, which will inform subsequent data preparation and modeling decisions.
+
+\subsection{Data Collection and Background}
+
+The dataset consists of multivariate sensor readings collected from industrial engines operating under varying conditions. Each engine is monitored over multiple operational cycles, with sensor measurements capturing different aspects of engine health and performance. The primary objective of the dataset is to enable predictive maintenance by identifying patterns that precede engine failure events.
+
+Such sensor-driven monitoring systems are commonly used in industrial settings to reduce unplanned downtime and optimize maintenance schedules. By analyzing historical sensor behavior, early warning indicators of potential failures can be identified, allowing proactive intervention.
+
+\subsection{Data Overview}
+
+
+An initial structural assessment of the dataset was conducted to understand its scale, composition, and data quality. The dataset consists of multiple numerical variables representing engine operational parameters and sensor measurements recorded over time.
+
+The dataset contains a single target variable indicating engine failure status, which is modeled as a binary classification problem. All remaining variables represent continuous sensor readings related to temperature, pressure, rotational speed, and fuel characteristics.
+
+An inspection of the dataset revealed that the majority of features are numerical in nature, making the dataset well-suited for machine learning algorithms that operate on continuous inputs. A check for missing values confirmed that the dataset does not contain significant missing data, reducing the need for extensive imputation strategies.
+
+Descriptive statistics were computed for all numerical features to examine their central tendency and variability. Several sensor variables exhibit wide value ranges, indicating differences in operational regimes and engine conditions. These observations motivate the use of robust models capable of handling heterogeneous feature scales.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/data_overview_summary.png}
+\caption{Overview of dataset structure and descriptive statistics}
+\label{fig:data_overview}
+\end{figure}
+
+\subsection{Univariate Analysis}
+
+Univariate analysis was performed to examine the distribution and variability of individual features. This analysis helps identify skewed distributions, potential outliers, and irregular sensor behavior.
+
+The distribution of the target variable was analyzed to assess class balance. Additionally, representative sensor variables were visualized to understand their value ranges and overall behavior across engine cycles.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/univariate_sensor_distributions.png}
+	\caption{Univariate distributions of key engine sensor variables}
+	\label{fig:univariate_dist}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/univariate_sensor_outliers.png}
+	\caption{Outlier patterns observed across engine sensor variables}
+	\label{fig:univariate_outliers}
+\end{figure}
+
+\subsection{Bivariate Analysis}
+
+Bivariate analysis was performed to examine the relationship between individual sensor variables and the engine failure target. Sensor readings were compared across failure and non-failure instances to identify features that exhibit distinguishable behavior prior to failure events.
+
+Boxplots were used to visualize the distribution of selected sensor variables across the two target classes. Several sensors show noticeable shifts in median values and increased variability in failure cases, suggesting that these variables may contain predictive signals related to engine degradation.
+
+In addition to visual analysis, summary statistics grouped by failure status were examined to quantify differences in sensor behavior between the two classes. These comparisons highlight sensor variables that demonstrate systematic changes as engines approach failure.
+
+The results of this analysis provide early intuition regarding feature relevance and support the selection of models that can capture non-linear relationships between sensor readings and failure outcomes.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/bivariate_sensor_vs_target.png}
+	\caption{Sensor value comparison across normal and failure engine conditions}
+	\label{fig:bivariate}
+\end{figure}
+
+\subsection{Multivariate Analysis}
+
+Multivariate analysis was conducted to explore relationships among multiple sensor variables simultaneously and to identify potential interdependencies. A correlation analysis was performed across sensor features to assess the degree of linear association between variables.
+
+The correlation matrix reveals the presence of several strongly correlated sensor pairs, indicating redundancy in the information captured by certain measurements. Such multicollinearity can impact model interpretability and may influence feature selection decisions.
+
+Understanding these inter-feature relationships is important for guiding downstream modeling choices. In particular, the presence of correlated inputs supports the use of tree-based ensemble models, which are generally robust to multicollinearity and can effectively leverage redundant signals without requiring explicit feature elimination.
+
+This analysis also provides a foundation for potential dimensionality reduction or feature pruning in later stages of the project, if required.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/correlation_heatmap.png}
+\caption{Correlation heatmap of engine sensor variables}
+\label{fig:correlation}
+\end{figure}
+
+\subsection{EDA Insights and Observations}
+
+\begin{itemize}
+\item Engine failure events are relatively rare, indicating class imbalance and the need for recall-focused evaluation metrics.
+\item Pressure- and temperature-related sensors show systematic shifts prior to failure, highlighting their predictive relevance.
+\item Several sensor variables are strongly correlated, suggesting redundancy but supporting the use of tree-based ensemble models.
+\item The observed non-linear relationships motivate the use of ensemble learning approaches over linear models.
+\end{itemize}
+
+These insights directly inform the data preparation strategy and guide the selection of appropriate modeling techniques in the subsequent stages of the project.
+
+\newpage
+
+
+\section{Data Preparation}
+
+This section describes the steps undertaken to prepare the dataset for machine learning modeling. The workflow satisfies the required steps: (1)~load the dataset directly from the Hugging Face data space; (2)~perform data cleaning and remove unnecessary columns; (3)~split the cleaned dataset into training and testing sets and save them locally; (4)~upload the resulting train and test datasets back to the Hugging Face data space.
+
+
+\subsection{Data Loading}
+
+The dataset was loaded directly from the Hugging Face Dataset Hub to ensure consistency with the registered data source. Loading the data from a centralized repository guarantees reproducibility and ensures that all experiments are conducted on a version-controlled dataset rather than local copies.
+
+\subsection{Data Cleaning and Feature Selection}
+
+An initial data cleaning step was performed to remove columns that are not relevant for predictive modeling. Since the objective is to predict engine failure based on sensor behavior, only numerical sensor variables and the target variable were retained.
+
+The dataset did not contain missing values across the selected features, eliminating the need for imputation. No feature scaling or normalization was applied at this stage, as the subsequent modeling phase focuses on tree-based algorithms that are inherently robust to differences in feature scale and distribution.
+
+\subsection{Train--Test Split}
+
+The cleaned dataset was split into training and testing subsets to enable unbiased model evaluation. A stratified split strategy was employed to preserve the original class distribution of the target variable in both subsets, which is particularly important given the class imbalance observed during exploratory data analysis.
+
+The training and testing datasets were saved locally to maintain a clear separation between raw, processed, and modeling-ready data.
+
+\subsection{Dataset Versioning and Upload}
+
+To maintain reproducibility and support experiment tracking, the processed training and testing datasets were uploaded back to the Hugging Face Dataset Hub. This ensures that all modeling experiments reference a fixed and verifiable version of the prepared data.
+
+By registering both raw and processed datasets on the Hugging Face platform, the data preparation workflow remains transparent, auditable, and reproducible.
+
+\subsection*{Methodology Summary}
+
+The data preparation process involved loading version-controlled datasets from the Hugging Face platform, selecting relevant sensor variables, and performing a stratified train--test split to preserve class distribution. No feature scaling was applied, as tree-based models were selected for downstream modeling.
+
+
+\newpage
+
+
+\section{Model Building with Experimentation Tracking}
+
+This section describes the development, tuning, evaluation, and registration of machine learning models for predicting engine failure. The objective is to establish a transparent and reproducible experimentation workflow that enables systematic comparison of model performance.
+
+\subsection{Data Loading}
+
+The training and testing datasets were loaded directly from the Hugging Face Dataset Hub to ensure consistency with the versioned outputs of the data preparation stage. This approach guarantees that all modeling experiments are conducted on fixed and auditable datasets.
+
+\subsection{Model Selection and Baseline}
+
+Based on insights from exploratory data analysis, tree-based machine learning algorithms were selected due to their ability to model non-linear relationships, robustness to outliers, and tolerance to correlated features. A Decision Tree classifier was used as a baseline model to establish a performance reference point.
+
+\subsection{Hyperparameter Tuning and Experiment Tracking}
+
+Models and parameters were defined as follows: a \textbf{Decision Tree} classifier as baseline (no tuning); \textbf{Random Forest}, \textbf{Gradient Boosting}, and \textbf{XGBoost}, each with a defined \textbf{parameter grid} and \textbf{tuned} using \texttt{GridSearchCV} with recall as the scoring metric; and a \textbf{Logistic Regression} (with \texttt{StandardScaler}) as a linear baseline. \textbf{All tuned parameters} and their cross-validation scores were \textbf{logged} via \texttt{grid\_search.cv\_results\_}, and the top configurations were recorded in an experiment log for transparency and reproducibility.
+
+\subsection{Model Evaluation}
+
+Model performance was evaluated on the held-out test dataset using metrics appropriate for imbalanced classification problems. Precision, recall, F1-score, and ROC-AUC were used to assess the trade-off between failure detection and false maintenance alerts.
+
+The confusion matrix was analyzed to understand error distribution and to quantify the cost of missed failure events.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of all five models on test data (best model by recall in bold)}
+\label{tab:model_performance}
+\begin{tabular}{lcccc}
+\toprule
+Model & Precision & Recall & F1-score & ROC-AUC \\
+\midrule
+Decision Tree & 0.674 & 0.678 & 0.676 & 0.559 \\
+Random Forest & 0.672 & 0.898 & 0.769 & 0.700 \\
+Logistic Regression & 0.679 & 0.878 & 0.766 & 0.692 \\
+\textbf{Gradient Boosting} & \textbf{0.630} & \textbf{1.000} & \textbf{0.773} & 0.686 \\
+XGBoost & 0.649 & 0.968 & 0.777 & 0.690 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Best Model Selection and Registration}
+
+The best-performing model among the five was selected \textbf{by recall} to minimize undetected failure events. In the reported run, \textbf{Gradient Boosting} achieved the highest recall (1.000 on the test set), followed by XGBoost (0.968) and Random Forest (0.898). Gradient Boosting was therefore chosen as the best model and registered on the Hugging Face Model Hub, along with its configuration and performance metrics. The deployed Streamlit application loads this best model at runtime from the Hub (the selected model may be Gradient Boosting, Random Forest, XGBoost, or another of the five depending on the training run).
+
+Registering the model on the Hugging Face platform ensures reproducibility, enables version control, and supports future deployment and evaluation workflows.
+
+\begin{figure}[H]
+	\centering
+\includegraphics[width=0.5\textwidth]{figures/confusion_matrix_best_model.png}
+\caption{Confusion matrix for the best model (Gradient Boosting, selected by recall) on the test dataset}
+	\label{fig:confusion_matrix}
+\end{figure}
+
+
+\subsection*{Methodology Summary}
+
+Five models were trained and evaluated: Decision Tree (baseline), Random Forest, Logistic Regression, Gradient Boosting, and XGBoost. Tree-based and ensemble models were chosen for their robustness to non-linear relationships, outliers, and correlated features; Logistic Regression with scaled features provided a linear baseline. Hyperparameter tuning for Random Forest, Gradient Boosting, and XGBoost was performed via grid search with recall as the scoring metric. The best model by recall (Gradient Boosting in the reported run) was selected and registered on the Hugging Face Model Hub.
+
+\newpage
+
+\section{Model Deployment}
+
+This section describes how the selected best model was made available for use through a web application hosted on the Hugging Face Spaces platform.
+
+\subsection{Deployment Architecture}
+
+The deployment uses a \textbf{Dockerfile} that defines the runtime environment: a Python base image, installation of dependencies from \texttt{requirements.txt}, and configuration of the Streamlit application to listen on \textbf{port 7860}, which is the default port for Hugging Face Docker Spaces. A health check and the appropriate \texttt{CMD} ensure the app starts correctly on the platform.
+
+The application \textbf{loads the saved model from the Hugging Face Model Hub} at runtime (via \texttt{hf\_hub\_download}) rather than bundling the model inside the image. User \textbf{inputs} (sensor values) are collected via the Streamlit interface, \textbf{saved into a DataFrame} with the same feature columns and order as in training, and passed to the model to obtain a failure prediction.
+
+\subsection{Dockerfile and Configurations}
+
+The Dockerfile includes the following configurations:
+\begin{itemize}
+    \item \textbf{FROM} \texttt{python:3.11-slim} (base image).
+    \item \textbf{WORKDIR} \texttt{/app}.
+    \item \textbf{RUN} system dependencies (e.g., \texttt{build-essential}, \texttt{curl} for health check).
+    \item \textbf{COPY} \texttt{requirements.txt} and \textbf{RUN} \texttt{pip install -r requirements.txt}.
+    \item \textbf{COPY} \texttt{app.py}.
+    \item \textbf{EXPOSE 7860} (Hugging Face Spaces Docker default).
+    \item \textbf{HEALTHCHECK} using \texttt{curl} to \texttt{localhost:7860/\_stcore/health}.
+    \item \textbf{CMD} to run Streamlit with \texttt{--server.port=7860}, \texttt{--server.address=0.0.0.0}, \texttt{--server.headless=true}.
+\end{itemize}
+
+\subsection{Key Deployment Components}
+
+\begin{itemize}
+    \item \textbf{Application script (\texttt{app.py}):} Streamlit UI for entering sensor values; lazy loading of the model on first prediction; explicit feature column list; inputs assembled into a DataFrame before prediction; error handling for load and prediction.
+    \item \textbf{Dependencies file (\texttt{requirements.txt}):} Lists all packages required for deployment (e.g., \texttt{streamlit}, \texttt{pandas}, \texttt{scikit-learn}, \texttt{joblib}, \texttt{huggingface\_hub}).
+    \item \textbf{Hosting script (\texttt{scripts/deploy.py}):} Pushes all deployment files (\texttt{app.py}, \texttt{requirements.txt}, \texttt{Dockerfile}) to the Hugging Face Space via \texttt{HfApi().upload\_file()} and ensures the Space exists with \texttt{create\_repo(..., space\_sdk="docker")}. The workflow runs this script so that code updates on the main branch are automatically reflected on the Space.
+\end{itemize}
+
+\subsection{Hosting Platform}
+
+The application is hosted as a \textbf{Hugging Face Space} using the Docker SDK. The Space builds and runs the container; users access the app via the Space URL. The use of port 7860 is required for Hugging Face Spaces so that the platform can route traffic to the application correctly.
+
+\newpage
+
+\section{Automated GitHub Actions Workflow}
+
+An automated pipeline was implemented using GitHub Actions so that data preparation, model training, and deployment run consistently on every push to the main branch.
+
+\subsection{Workflow Configuration}
+
+The workflow is defined in \texttt{.github/workflows/pipeline.yml}. It is triggered on \textbf{push} events to the \textbf{main} branch. Pushing code updates to the main branch automatically runs the end-to-end pipeline (data preparation, model training, and deployment to the Hugging Face Space), so the live app and model stay in sync with the repository without manual steps.
+
+\subsection{Pipeline Steps}
+
+The workflow executes the following steps in sequence:
+
+\begin{enumerate}
+    \item \textbf{Checkout:} The repository is checked out so that scripts and configuration files are available.
+    \item \textbf{Data preparation:} A dedicated job or step runs the data preparation script (e.g., \texttt{scripts/data\_preparation.py}). This loads the dataset from the Hugging Face Dataset Hub, performs cleaning and train--test split, and uploads the processed datasets back to the Hub (and optionally saves artifacts for downstream steps).
+    \item \textbf{Model training:} The model training script (\texttt{scripts/model\_training.py}) is executed. It loads the prepared data from the Hub, trains all five models (Decision Tree, Random Forest, Logistic Regression, Gradient Boosting, XGBoost), evaluates them on the test set, selects the best by recall, and uploads that model to the Hugging Face Model Hub.
+    \item \textbf{Deployment:} The deployment step pushes the application code (e.g., \texttt{app.py}, \texttt{Dockerfile}, \texttt{requirements.txt}) to the Hugging Face Space, so the Space rebuilds and serves the updated app with the latest model.
+\end{enumerate}
+
+Secrets (e.g., Hugging Face token) are stored in the repository secrets and used by the workflow for Hub and Space authentication. This setup provides a single, repeatable path from code change to live deployment.
+
+\newpage
+
+\section{Output Evaluation}
+
+This section summarizes the project deliverables and how the pipeline and deployment can be verified.
+
+\subsection{Project Artifacts}
+
+The repository (see Summary of Links below) contains the full folder structure, including \texttt{data/}, \texttt{scripts/}, \texttt{notebooks/}, \texttt{reports/}, \texttt{app.py}, \texttt{Dockerfile}, \texttt{requirements.txt}, and \texttt{.github/workflows/}. The accompanying notebook includes screenshots of the repository layout and a completed GitHub Actions run (Data preparation, Model training, Deploy to HF Spaces). The Streamlit application is available at the Hugging Face Space linked below, with a screenshot of the live app (form and prediction result) in the notebook.
+
+\subsection{Repository and Workflow}
+
+The project code and configuration are maintained in a \textbf{GitHub repository}. The repository contains the master folder structure, including the \texttt{data/} subfolder, scripts for data preparation and model training, the Streamlit application and Dockerfile, and the GitHub Actions workflow file (\texttt{.github/workflows/pipeline.yml}). Inspect the repository folder structure and the Actions tab to confirm a successful run; screenshots are in the accompanying notebook.
+
+\subsection{Deployed Application}
+
+The predictive maintenance application is hosted on a \textbf{Hugging Face Space}. The Space URL is given below. Users can enter sensor values and click ``Predict'' to obtain a failure prediction. A screenshot of the running app is in the accompanying notebook.
+
+\subsection{Summary of Links}
+
+\begin{itemize}
+    \item \textbf{GitHub repository:} \url{https://github.com/siddmkrj/predictive_maintenance} (project code and workflow).
+    \item \textbf{Hugging Face Space:} \url{https://huggingface.co/spaces/mukherjee78/predictive-maintenance-app}
+    \item \textbf{Dataset:} \url{https://huggingface.co/datasets/mukherjee78/predictive-maintenance-engine-data}
+    \item \textbf{Model:} \url{https://huggingface.co/mukherjee78/predictive-maintenance-random-forest}
+\end{itemize}
+
+Figure~\ref{fig:streamlit_app} shows the deployed Streamlit application on the Hugging Face Space.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/streamlit_app.png}
+\caption{Streamlit app on Hugging Face Spaces: Engine Predictive Maintenance interface with sensor inputs and prediction result}
+\label{fig:streamlit_app}
+\end{figure}
+
+\newpage
+
+\section{Actionable Insights and Recommendations}
+
+This section connects the technical findings to the business context with insights and recommendations.
+
+\subsection{Insights}
+
+\begin{itemize}
+    \item \textbf{Class imbalance:} Engine failure events are relatively rare in the data. Metrics such as recall and F1-score are more meaningful than accuracy for assessing how well the model detects actual failures and balances false alarms.
+    \item \textbf{Sensor relevance:} Pressure- and temperature-related sensors show systematic changes before failure; these signals are the most predictive and should be prioritized in monitoring and in any future sensor or feature decisions.
+    \item \textbf{Model performance:} All five models were evaluated on the same test set. The Decision Tree baseline achieved recall 0.68 and F1 0.68. Ensemble and linear models performed better: Random Forest (recall 0.90, F1 0.77), Logistic Regression (recall 0.88, F1 0.77), Gradient Boosting (recall 1.00, F1 0.77), and XGBoost (recall 0.97, F1 0.78). Gradient Boosting was selected as best by recall (1.00) to minimize missed failures, with the trade-off of lower precision (0.63) and more potential false positives than Random Forest or XGBoost.
+    \item \textbf{Pipeline and automation:} The GitHub Actions pipeline runs data preparation, model training, and deployment on every push to the main branch, reducing manual steps and the risk of inconsistent releases.
+\end{itemize}
+
+\subsection{Recommendations}
+
+\begin{itemize}
+    \item \textbf{Operational use:} Use the deployed Streamlit app as a decision-support tool. For predictions indicating elevated failure risk, schedule inspections or maintenance rather than relying on the model output alone for safety-critical decisions.
+    \item \textbf{Monitoring and retraining:} Log predictions and outcomes (e.g., whether maintenance was performed and whether failure occurred) to monitor model drift and to collect data for periodic retraining.
+    \item \textbf{Extensibility:} Keep the data and model on the Hugging Face Hub and the pipeline in version control so that new sensors, features, or models can be integrated with minimal disruption.
+\end{itemize}
+
+\newpage
+
+\appendix
+\section{Appendix}
+
+This appendix contains supplementary material supporting the analyses presented in the main report. In line with the project guidelines, raw code, extended outputs, and detailed experiment logs are not included in the main body. All code, execution outputs, and additional plots are provided in HTML format in the accompanying notebook, which supports verification of results and code execution.
+
+\end{document}

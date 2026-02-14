@@ -1,0 +1,34 @@
+# Git and env
+.git
+.gitignore
+.env
+.venv
+venv
+env
+
+# Data and artifacts (app loads model from HF or mounted volume)
+data/
+models/
+reports/
+notebooks/
+submission/
+scripts/
+
+# CI and docs
+.github/
+*.md
+!README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+.cursor/
+.DS_Store

@@ -1,0 +1,19 @@
+{
+  "best_params": {
+    "max_depth": 5,
+    "min_samples_split": 2,
+    "n_estimators": 200
+  },
+  "decision_tree": {
+    "precision": 0.6735187424425635,
+    "recall": 0.6784409257003654,
+    "f1": 0.6759708737864077,
+    "roc_auc": 0.558749548722759
+  },
+  "random_forest": {
+    "precision": 0.6728376327769348,
+    "recall": 0.9001218026796589,
+    "f1": 0.770059048280653,
+    "roc_auc": 0.6994428905136744
+  }
+}
