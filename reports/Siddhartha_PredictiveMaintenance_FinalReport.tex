@@ -231,6 +231,8 @@ XGBoost & 0.649 & 0.968 & 0.777 & 0.690 \\
 \end{tabular}
 \end{table}
 
+A recall of 1.0 for Gradient Boosting means that the model did not miss any actual failure in the test set (zero false negatives). This is a deliberate choice for predictive maintenance, where undetected failures are typically more costly than unnecessary inspections. The trade-off is lower precision (0.63): the model flags more cases as ``failure,'' so there are more false positives and thus more unnecessary maintenance alerts. If false alarms become too costly or frequent in practice, a model with slightly lower recall but higher precision (e.g., Random Forest or XGBoost) may be preferred. The reported metrics and confusion matrix allow stakeholders to make this trade-off explicitly.
+
 \subsection{Best Model Selection and Registration}
 
 The best-performing model among the five was selected \textbf{by recall} to minimize undetected failure events. In the reported run, \textbf{Gradient Boosting} achieved the highest recall (1.000 on the test set), followed by XGBoost (0.968) and Random Forest (0.898). Gradient Boosting was therefore chosen as the best model and registered on the Hugging Face Model Hub, along with its configuration and performance metrics. The deployed Streamlit application loads this best model at runtime from the Hub (the selected model may be Gradient Boosting, Random Forest, XGBoost, or another of the five depending on the training run).
